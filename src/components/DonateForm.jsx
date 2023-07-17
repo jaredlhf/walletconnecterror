@@ -1,8 +1,8 @@
 import { useWallet } from "@txnlab/use-wallet";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Button from "./Button";
-import { donate } from "../algorand/donate";
 import algosdk from "algosdk";
+import { getAlgodClient } from "@/clients";
 
 
 export default function DonateForm() {
@@ -13,8 +13,19 @@ export default function DonateForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const algodClient = getAlgodClient(process.env.NEXT_PUBLIC_NETWORK);
 
-    const txn = await donate(activeAddress, donationAmount, "UYOKPQPYO4KPPGZLY2THPNORV45XCU6BD6PVAR65O4PWSXDWAG6JNHKYHE")
+    const suggestedParams = await algodClient.getTransactionParams().do();
+
+    let txn = algosdk.makePaymentTxnWithSuggestedParams(
+      activeAddress,
+      "UYOKPQPYO4KPPGZLY2THPNORV45XCU6BD6PVAR65O4PWSXDWAG6JNHKYHE",
+      donationAmount * 1e6,
+      undefined,
+      undefined,
+      suggestedParams
+    );
+  
     const payload = [txn];
     const groupedTxn = algosdk.assignGroupID(payload);
     const encodedTxns = groupedTxn.map((txn) =>
@@ -28,7 +39,7 @@ export default function DonateForm() {
   return (
     <>
       <div>
-        <h4 className="mb-4">Make donation</h4>
+        
       </div>
       <div className="w-full">
         {txnref && <p className="mb-4">Txn ID: {txnref} </p>}
